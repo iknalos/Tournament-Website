@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Boston Friendly Tournament V — Register</title>
+    <meta name="description" content="Register for Boston Friendly Badminton Tournament V · May 1st 2026 · Westborough MA" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/outfit@5/index.css" />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 0; background: #030c06; font-family: 'Outfit', system-ui, sans-serif; overflow: hidden; }
+      .bbt-scroll { overflow-y: scroll; overflow-x: hidden; }
+      .bbt-scroll::-webkit-scrollbar { width: 3px; }
+      .bbt-scroll::-webkit-scrollbar-track { background: transparent; }
+      .bbt-scroll::-webkit-scrollbar-thumb { background: rgba(34,197,94,0.45); border-radius: 2px; }
+      input, textarea {
+        background: rgba(12,26,16,0.88) !important;
+        color: #e6f0ea !important;
+        border: 1px solid rgba(255,255,255,0.09) !important;
+        border-radius: 10px !important;
+        padding: 12px 15px !important;
+        font-size: 14px !important;
+        font-family: 'Outfit', system-ui, sans-serif !important;
+        outline: none !important;
+        width: 100%;
+        resize: vertical;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      input::placeholder, textarea::placeholder { color: #7a9488 !important; }
+      input:focus, textarea:focus {
+        border-color: rgba(34,197,94,0.40) !important;
+        box-shadow: 0 0 0 3px rgba(34,197,94,0.17) !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
