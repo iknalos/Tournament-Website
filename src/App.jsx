@@ -4,7 +4,8 @@ import { supabase } from "./supabase.js";
 const STORAGE_KEY  = "bbt5-v15-regs";
 const INVITE_KEY   = "bbt5-v15-invites";
 const ADMIN_PIN    = "012345";           // ← change this to your PIN
-const SIZES = ["XS","S","M","L","XL","XXL"];
+const MENS_SIZES   = ["M","L","XL","2XL","3XL","4XL"];
+const WOMENS_SIZES = ["XS","S","M","L","XL","2XL","3XL"];
 const SHIRT_MN="data:image/jpeg;base64,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";
 const SHIRT_MB="data:image/jpeg;base64,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";
 const SHIRT_LN="data:image/jpeg;base64,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";
@@ -55,6 +56,8 @@ export default function BBT5() {
   const [tshirt, setTshirt]     = useState(false);
   const [shirtColor, setShirtColor] = useState("");
   const [shirtCut, setShirtCut]     = useState("");
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [shirtName, setShirtName]         = useState("");
   const [size, setSize]         = useState("");
   const [comments, setComments]   = useState("");
   const [paid, setPaid]           = useState("pending");
@@ -133,6 +136,7 @@ export default function BBT5() {
     if (joining === "yes" && !untilTime) e.untilTime = "Please select a time";
     if (joining === "yes" && tshirt && !size) e.size = "Please pick a size";
     if (joining === "yes" && tshirt && !shirtColor) e.shirtColor = "Please pick a colour";
+    if (joining === "yes" && tshirt && !shirtName.trim()) e.shirtName = "Please enter a name for the back";
     if (!agreed) e.agreed = "Please read and accept the tournament regulations";
     return e;
   };
@@ -147,6 +151,8 @@ export default function BBT5() {
       name: name.trim(), email: email.trim().toLowerCase(), gender, joining,
       tshirt: joining==="yes"?tshirt:false,
       size: joining==="yes"&&tshirt?size:"",
+      shirt_color: joining==="yes"&&tshirt?shirtColor:"",
+      shirt_name: joining==="yes"&&tshirt?shirtName.trim():"",
       total, until_time: joining==="yes"?untilTime:"",
       paid: joining==="yes"?paid:"na",
       comments: comments.trim(), registered_at: registeredAt,
@@ -178,7 +184,7 @@ export default function BBT5() {
 
   const resetForm = () => {
     setName(""); setEmail(""); setGender(""); setJoining(""); setTshirt(false);
-    setSize(""); setShirtColor(""); setShirtCut(""); setComments(""); setPaid("pending"); setUntilTime(""); setAgreed(false); setRegsOpen(false); setErrors({});
+    setSize(""); setShirtColor(""); setShirtCut(""); setShirtName(""); setComments(""); setPaid("pending"); setUntilTime(""); setAgreed(false); setRegsOpen(false); setErrors({});
     setSubmitted(null); setView("form");
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   };
@@ -658,7 +664,7 @@ export default function BBT5() {
             <h1 style={{fontSize:34,fontWeight:900,margin:"0 0 2px",color:"#fff",letterSpacing:"-0.03em",lineHeight:1.05,textShadow:"0 4px 28px rgba(0,0,0,0.9)"}}>Boston Friendly</h1>
             <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 20px",color:C.accent,letterSpacing:"-0.03em",lineHeight:1.05,textShadow:"0 4px 24px rgba(34,197,94,0.38)"}}>Tournament V</h1>
             <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",gap:7,marginBottom:16}}>
-              {[["📅","May 1st, 2026"],["🕖","7:30 PM – 12 AM"],["📍","Boston Badminton, Harvard"],["💵","$25 entry"]].map(([ic,tx])=>(
+              {[["📅","May 1st, 2026"],["🕖","7:30 PM – 12 AM*"],["📍","Boston Badminton, Harvard"],["💵","$25 entry"]].map(([ic,tx])=>(
                 <span key={tx} style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(0,0,0,0.42)",backdropFilter:"blur(8px)",borderRadius:99,padding:"5px 12px",fontSize:11,color:"rgba(255,255,255,0.8)",border:"1px solid rgba(255,255,255,0.1)"}}>
                   {ic} {tx}
                 </span>
@@ -715,7 +721,7 @@ export default function BBT5() {
                       <span style={{fontSize:14}}>🕖</span>
                       <span style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em"}}>Timings</span>
                     </div>
-                    <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.7,opacity:0.9}}>7:30 PM to 12:00 AM. Can't stay the whole time? No problem — you can choose your available window when registering.</p>
+                    <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.7,opacity:0.9}}>7:30 PM to 12:00 AM*. Can't stay the whole time? No problem — you can choose your available window when registering.</p>
                   </div>
 
                   <div style={{borderTop:`1px solid ${C.border}`}}/>
@@ -888,7 +894,7 @@ export default function BBT5() {
               </div>
               <div style={{...card(),padding:"1.2rem"}}>
                 <p style={{fontSize:13,color:C.muted,margin:"0 0 10px",lineHeight:1.5}}>
-                  🕐 Tournament runs <strong style={{color:C.text}}>7:30 PM – 12:00 AM</strong>. Until what time can you play?
+                  🕐 Tournament runs <strong style={{color:C.text}}>7:30 PM – 12:00 AM*</strong>. Until what time can you play?
                 </p>
                 <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(34,197,94,0.07)",border:"1px solid rgba(34,197,94,0.18)",borderRadius:9,padding:"8px 12px",marginBottom:14}}>
                   <span style={{fontSize:14,flexShrink:0,marginTop:1}}>💚</span>
@@ -897,7 +903,7 @@ export default function BBT5() {
                   </p>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-                  {["10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM","Full tournament 🏆"].map(t=>(
+                  {["10:00 PM","10:30 PM","11:00 PM","11:30 PM","12:00 AM *","Full tournament 🏆"].map(t=>(
                     <button key={t} onClick={()=>{setUntilTime(t);setErrors(ex=>({...ex,untilTime:null}));}}
                       style={{
                         padding:"10px 4px", borderRadius:10, cursor:"pointer", textAlign:"center",
@@ -915,6 +921,7 @@ export default function BBT5() {
                   ))}
                 </div>
                 {errors.untilTime&&<p style={errTxt}>{errors.untilTime}</p>}
+                <p style={{fontSize:10,color:C.muted,marginTop:8}}>* Event may continue past midnight</p>
               </div>
             </div>
           )}
@@ -930,8 +937,8 @@ export default function BBT5() {
               <div style={{padding:"1rem 1.2rem",display:"flex",alignItems:"center",gap:12,background:tshirt&&!locked?"rgba(34,197,94,0.07)":"transparent",transition:"background .3s"}}>
                 <div style={{width:44,height:44,borderRadius:12,background:tshirt&&!locked?C.accent:"rgba(18,38,24,0.9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,transition:"background .3s"}}>👕</div>
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:C.text}}>BBT V Tournament T-shirt</div>
-                  <div style={{fontSize:13,color:tshirt&&!locked?C.accent:C.muted,marginTop:2,transition:"color .3s"}}>{tshirt&&!locked?"+ $12 added to your total":"Optional · +$12 · Sizes XS–XXL"}</div>
+                  <div style={{fontWeight:700,fontSize:14,color:C.text}}>BFT Tournament T-shirts</div>
+                  <div style={{fontSize:13,color:tshirt&&!locked?C.accent:C.muted,marginTop:2,transition:"color .3s"}}>{tshirt&&!locked?"+ $12 added to your total":gender==="female"?"Optional · +$12 · Sizes XS–3XL":"Optional · +$12 · Sizes M–4XL"}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
                   <span style={{fontSize:13,fontWeight:600,color:tshirt&&!locked?C.accent:C.muted}}>{tshirt&&!locked?"Yes":"No"}</span>
@@ -943,9 +950,58 @@ export default function BBT5() {
               {tshirt&&<>
                 <div style={hr}/>
                 <div style={{padding:"1rem 1.2rem"}}>
-                  <p style={{...fLabel,marginBottom:10}}>Select size (US) *</p>
+                  {/* Size label + chart toggle */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <p style={{...fLabel,margin:0}}>Select size *</p>
+                    <button onClick={()=>setShowSizeChart(x=>!x)}
+                      style={{fontSize:11,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontFamily:fn,
+                        border:`1px solid ${C.borderMid}`,background:"transparent",color:C.accent,fontWeight:600}}>
+                      {showSizeChart?"Hide chart":"📏 Size chart"}
+                    </button>
+                  </div>
+                  {/* Size chart */}
+                  {showSizeChart&&(()=>{
+                    const isMens = (shirtCut||( gender==="female"?"ladies":"mens"))==="mens";
+                    const menRows=[["M","68","46","102","21","160","94-110"],["L","70","47","106","22","170","110-121"],["XL","72","48","110","23","175","121-149"],["2XL","74","49","114","24","180","154-182"],["3XL","76","50","118","25","185","182-204"],["4XL","78","51","122","26","190","209-232"]];
+                    const womenRows=[["XS","51","32","72","13.5","120","44-55"],["S","53","33.5","76","14.5","130","55-66"],["M","57","35","88","15.5","155","88-99"],["L","59","36.5","88","16","155","97-99"],["XL","61","38","92","16.5","160","99-110"],["2XL","63","39.5","96","17","165","110-127"],["3XL","65","41","100","17.5","170","127-143"]];
+                    const rows = isMens ? menRows : womenRows;
+                    const thStyle={padding:"5px 7px",fontSize:10,fontWeight:700,color:C.muted,textAlign:"center",borderBottom:`1px solid rgba(255,255,255,0.1)`,whiteSpace:"nowrap"};
+                    const tdStyle={padding:"4px 7px",fontSize:10,color:C.text,textAlign:"center",borderBottom:`1px solid rgba(255,255,255,0.06)`};
+                    const tdHL={...tdStyle,color:C.accent,fontWeight:700};
+                    return (
+                      <div style={{marginBottom:12,borderRadius:10,overflow:"hidden",border:`1px solid rgba(255,255,255,0.08)`,background:"rgba(0,0,0,0.3)"}}>
+                        <div style={{padding:"7px 10px",background:"rgba(34,197,94,0.08)",borderBottom:`1px solid rgba(34,197,94,0.15)`}}>
+                          <span style={{fontSize:11,fontWeight:700,color:C.accent}}>{isMens?"👨 Men's":"👩 Women's"} Size Reference</span>
+                          <span style={{fontSize:10,color:C.muted,marginLeft:8}}>(cm · for reference only)</span>
+                          {!isMens&&<span style={{fontSize:10,color:"#f59e0b",marginLeft:8}}>⚠ Runs small</span>}
+                        </div>
+                        <div style={{overflowX:"auto"}}>
+                          <table style={{width:"100%",borderCollapse:"collapse",minWidth:420}}>
+                            <thead><tr>
+                              {["Size","Body L","Shoulder","Chest","Sleeve","Height","Weight (lbs)"].map(h=>(
+                                <th key={h} style={thStyle}>{h}</th>
+                              ))}
+                            </tr></thead>
+                            <tbody>
+                              {rows.map(([sz,...vals])=>(
+                                <tr key={sz} style={{background:size===sz?"rgba(34,197,94,0.07)":"transparent"}}>
+                                  <td style={tdHL}>{sz}</td>
+                                  {vals.map((v,i)=><td key={i} style={tdStyle}>{v}</td>)}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {/* Size buttons — gender-aware */}
                   <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {SIZES.map(sz=>(<button key={sz} style={szBtn(size===sz)} onClick={()=>{setSize(sz);setErrors(ex=>({...ex,size:null}));}}>{sz}</button>))}
+                    {(gender==="female"?WOMENS_SIZES:MENS_SIZES).map(sz=>(
+                      <button key={sz} style={szBtn(size===sz)} onClick={()=>{setSize(sz);setErrors(ex=>({...ex,size:null}));}}>
+                        {sz}
+                      </button>
+                    ))}
                   </div>
                   {errors.size&&<p style={errTxt}>{errors.size}</p>}
                 </div>
@@ -1003,6 +1059,23 @@ export default function BBT5() {
                       </>
                     );
                   })()}
+                </div>
+                <div style={hr}/>
+                <div style={{padding:"1rem 1.2rem"}}>
+                  <p style={{...fLabel,marginBottom:4}}>Name to print on back *</p>
+                  <p style={{fontSize:10,color:C.muted,margin:"0 0 8px"}}>Pre-filled from your name — edit if you'd like something different</p>
+                  <input
+                    value={shirtName || (shirtName===""&&name?name.split(" ")[0]:shirtName)}
+                    onFocus={()=>{ if(!shirtName && name) setShirtName(name.split(" ")[0]); }}
+                    onChange={e=>{setShirtName(e.target.value);setErrors(ex=>({...ex,shirtName:null}));}}
+                    placeholder={name?name.split(" ")[0]:"e.g. Alex"}
+                    maxLength={20}
+                    style={{width:"100%",boxSizing:"border-box",background:"rgba(8,20,12,0.7)",border:`1.5px solid ${errors.shirtName?C.error:shirtName?C.accent:C.borderMid}`,borderRadius:10,padding:"11px 14px",color:C.text,fontSize:14,fontFamily:fn,outline:"none",display:"block"}}
+                  />
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6,paddingRight:2}}>
+                    {errors.shirtName?<p style={{...errTxt,margin:0}}>{errors.shirtName}</p>:<span style={{fontSize:10,color:C.muted}}>Will be printed exactly as entered</span>}
+                    <span style={{fontSize:10,color:C.muted,flexShrink:0,marginLeft:8}}>{(shirtName||(name?name.split(" ")[0]:"")).length}/20</span>
+                  </div>
                 </div>
               </>}
             </div>
