@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { supabase } from "./supabase.js";
 
 const STORAGE_KEY  = "bbt5-v15-regs";
 const INVITE_KEY   = "bbt5-v15-invites";
@@ -65,6 +66,7 @@ export default function BBT5() {
   useEffect(() => {
     const h = Math.max(560, window.innerHeight || 700);
     setContainerH(h);
+    setIsDesktop(window.innerWidth >= 768);
     const handleResize = () => {
       setContainerH(Math.max(560, window.innerHeight || 700));
       setIsDesktop(window.innerWidth >= 768);
@@ -79,30 +81,37 @@ export default function BBT5() {
     const style = document.createElement("style");
     style.textContent = `
       * { box-sizing: border-box; }
-      body { margin:0; padding:0; background:${C.pageBg}; overflow:hidden; }
+      body { margin:0; padding:0; background:#030c06; overflow:hidden; }
       .bbt-scroll { overflow-y:scroll; overflow-x:hidden; }
       .bbt-scroll::-webkit-scrollbar { width:3px; }
       .bbt-scroll::-webkit-scrollbar-track { background:transparent; }
       .bbt-scroll::-webkit-scrollbar-thumb { background:rgba(34,197,94,0.45); border-radius:2px; }
-      input,textarea {
-        background:rgba(12,26,16,0.88)!important; color:${C.text}!important;
-        border:1px solid ${C.border}!important; border-radius:10px!important;
+      input, textarea {
+        background:rgba(12,26,16,0.88)!important; color:#e6f0ea!important;
+        border:1px solid rgba(255,255,255,0.09)!important; border-radius:10px!important;
         padding:12px 15px!important; font-size:14px!important;
         font-family:'Outfit',system-ui,sans-serif!important;
         outline:none!important; width:100%; resize:vertical;
         transition:border-color .15s,box-shadow .15s;
       }
-      input::placeholder,textarea::placeholder { color:${C.muted}!important; }
-      input:focus,textarea:focus {
-        border-color:${C.accentBdr}!important;
-        box-shadow:0 0 0 3px ${C.accentDim}!important;
-      }
+      input::placeholder,textarea::placeholder{color:#7a9488!important;}
+      input:focus,textarea:focus{border-color:rgba(34,197,94,0.40)!important;box-shadow:0 0 0 3px rgba(34,197,94,0.17)!important;}
     `;
     document.head.appendChild(style);
 
     (async () => {
-      try { const r = await window.storage.get(STORAGE_KEY); if (r) setRegs(JSON.parse(r.value)); } catch(e) {}
-      try { const r = await window.storage.get(INVITE_KEY);  if (r) setInvites(JSON.parse(r.value)); } catch(e) {}
+      const { data: regData } = await supabase.from('registrations').select('*').order('created_at');
+      if (regData) setRegs(regData.map(r => ({
+        id: r.id, name: r.name, email: r.email, gender: r.gender,
+        joining: r.joining, tshirt: r.tshirt, size: r.size, total: r.total,
+        untilTime: r.until_time, paid: r.paid, comments: r.comments,
+        registeredAt: r.registered_at,
+      })));
+      const { data: invData } = await supabase.from('invites').select('*').order('created_at');
+      if (invData) setInvites(invData.map(i => ({
+        id: i.id, name: i.name, status: i.status,
+        regId: i.reg_id, addedByAdmin: i.added_by_admin,
+      })));
       setReady(true);
     })();
   }, []);
@@ -115,8 +124,8 @@ export default function BBT5() {
     if (max > 0) setScrollPct(el.scrollTop / max);
   };
 
-  const persist = async (d) => { try { await window.storage.set(STORAGE_KEY, JSON.stringify(d)); } catch(e) {} };
-  const persistInvites = async (d) => { try { await window.storage.set(INVITE_KEY, JSON.stringify(d)); } catch(e) {} };
+  const persist = async () => {};
+  const persistInvites = async () => {};
 
   // Smart name matching — case insensitive, handles flipped names + middle names
   const smartMatch = (submitted, invited) => {
@@ -153,26 +162,30 @@ export default function BBT5() {
   const handleSubmit = async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
-    const entry = {
-      id:Date.now(), name:name.trim(), email:email.trim().toLowerCase(), gender, joining,
-      tshirt:joining==="yes"?tshirt:false, size:joining==="yes"&&tshirt?size:"", total,
-      untilTime:joining==="yes"?untilTime:"",
-      paid:joining==="yes"?paid:"na", comments:comments.trim(),
-      registeredAt:new Date().toLocaleString("en-US",{dateStyle:"medium",timeStyle:"short"})
-    };
-    const updatedRegs=[...regs,entry]; setRegs(updatedRegs); await persist(updatedRegs);
-
-    // Smart match against invite list — update invite status if found
+    const registeredAt = new Date().toLocaleString("en-US",{dateStyle:"medium",timeStyle:"short"});
+    const { data: inserted, error } = await supabase.from('registrations').insert({
+      name: name.trim(), email: email.trim().toLowerCase(), gender, joining,
+      tshirt: joining==="yes"?tshirt:false, size: joining==="yes"&&tshirt?size:"",
+      total, until_time: joining==="yes"?untilTime:"",
+      paid: joining==="yes"?paid:"na", comments: comments.trim(), registered_at: registeredAt,
+    }).select().single();
+    if (error) { console.error(error); return; }
+    const entry = { id:inserted.id, name:inserted.name, email:inserted.email, gender:inserted.gender,
+      joining:inserted.joining, tshirt:inserted.tshirt, size:inserted.size, total:inserted.total,
+      untilTime:inserted.until_time, paid:inserted.paid, comments:inserted.comments, registeredAt };
+    setRegs(prev => [...prev, entry]);
     const matchIdx = findInviteMatch(name.trim(), invites);
-    const updatedInvites = [...invites];
+    const newStatus = joining==="yes"?"joining":"cantmake";
     if (matchIdx !== -1) {
-      updatedInvites[matchIdx] = { ...updatedInvites[matchIdx], status: joining==="yes"?"joining":"cantmake", regId: entry.id };
+      const inv = invites[matchIdx];
+      await supabase.from('invites').update({ status: newStatus, reg_id: inserted.id }).eq('id', inv.id);
+      setInvites(prev => prev.map((i,idx) => idx===matchIdx ? {...i, status:newStatus, regId:inserted.id} : i));
     } else {
-      // No match — add them directly with their response
-      updatedInvites.push({ id: entry.id, name: name.trim(), status: joining==="yes"?"joining":"cantmake", regId: entry.id, addedByAdmin: false });
+      const { data: newInv } = await supabase.from('invites').insert({
+        name: name.trim(), status: newStatus, reg_id: inserted.id, added_by_admin: false,
+      }).select().single();
+      if (newInv) setInvites(prev => [...prev, { id:newInv.id, name:newInv.name, status:newInv.status, regId:newInv.reg_id, addedByAdmin:false }]);
     }
-    setInvites(updatedInvites); await persistInvites(updatedInvites);
-
     setSubmitted(entry); setView("confirm");
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   };
@@ -187,13 +200,14 @@ export default function BBT5() {
   const addInvite = async () => {
     const n = newInviteName.trim();
     if (!n) return;
-    const updated = [...invites, { id: Date.now(), name: n, status:"invited", regId:null, addedByAdmin:true }];
-    setInvites(updated); await persistInvites(updated); setNewInviteName("");
+    const { data: newInv } = await supabase.from('invites').insert({ name: n, status: "invited", added_by_admin: true }).select().single();
+    if (newInv) setInvites(prev => [...prev, { id:newInv.id, name:newInv.name, status:"invited", regId:null, addedByAdmin:true }]);
+    setNewInviteName("");
   };
 
   const removeInvite = async (id) => {
-    const updated = invites.filter(i=>i.id!==id);
-    setInvites(updated); await persistInvites(updated);
+    await supabase.from('invites').delete().eq('id', id);
+    setInvites(prev => prev.filter(i => i.id !== id));
   };
 
   const exportCSV = () => {
