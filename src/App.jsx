@@ -140,8 +140,8 @@ export default function BBT5() {
     if (!joining) e.joining = "Please select";
     if (joining === "yes" && !untilTime) e.untilTime = "Please select a time";
     if (joining === "yes" && tshirt && !size) e.size = "Please pick a size";
-    if (joining === "yes" && tshirt && !shirtColor) e.shirtColor = "Please pick a colour";
-    if (joining === "yes" && tshirt && !shirtName.trim()) e.shirtName = "Please enter a name for the back";
+    if (joining === "yes" && tshirt && !shirtColor) { const cut=shirtCut||(gender==="female"?"ladies":"mens"); setShirtColor(cut==="mens"?"mens-navy":"ladies-navy"); }
+    if (joining === "yes" && tshirt && !shirtName.trim() && !name.trim()) e.shirtName = "Please enter a name for the back";
     if (!agreed) e.agreed = "Please read and accept the tournament regulations";
     return e;
   };
@@ -157,7 +157,7 @@ export default function BBT5() {
       tshirt: joining==="yes"?tshirt:false,
       size: joining==="yes"&&tshirt?size:"",
       shirt_color: joining==="yes"&&tshirt?shirtColor:"",
-      shirt_name: joining==="yes"&&tshirt?shirtName.trim():"",
+      shirt_name: joining==="yes"&&tshirt?(shirtName.trim()||name.split(" ")[0]):"",
       total, until_time: joining==="yes"?untilTime:"",
       paid: joining==="yes"?paid:"na",
       comments: comments.trim(), registered_at: registeredAt,
@@ -947,7 +947,7 @@ export default function BBT5() {
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
                   <span style={{fontSize:13,fontWeight:600,color:tshirt&&!locked?C.accent:C.muted}}>{tshirt&&!locked?"Yes":"No"}</span>
-                  <div onClick={()=>{if(!locked){setTshirt(t=>!t);setSize("");setErrors(ex=>({...ex,size:null}));}}} style={{width:50,height:28,borderRadius:14,display:"flex",alignItems:"center",padding:"0 4px",justifyContent:tshirt&&!locked?"flex-end":"flex-start",background:tshirt&&!locked?C.accent:"rgba(28,52,34,0.9)",cursor:locked?"default":"pointer",transition:"all .25s",flexShrink:0,boxShadow:tshirt&&!locked?`0 0 10px ${C.accent}`:"none"}}>
+                  <div onClick={()=>{if(!locked){const next=!tshirt;setTshirt(next);setSize("");setErrors(ex=>({...ex,size:null}));if(next){if(!shirtName&&name)setShirtName(name.split(" ")[0]);const cut=shirtCut||(gender==="female"?"ladies":"mens");if(!shirtColor)setShirtColor(cut==="mens"?"mens-navy":"ladies-navy");}}}} style={{width:50,height:28,borderRadius:14,display:"flex",alignItems:"center",padding:"0 4px",justifyContent:tshirt&&!locked?"flex-end":"flex-start",background:tshirt&&!locked?C.accent:"rgba(28,52,34,0.9)",cursor:locked?"default":"pointer",transition:"all .25s",flexShrink:0,boxShadow:tshirt&&!locked?`0 0 10px ${C.accent}`:"none"}}>
                     <div style={{width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.5)",flexShrink:0}}/>
                   </div>
                 </div>
@@ -1070,7 +1070,7 @@ export default function BBT5() {
                   <p style={{...fLabel,marginBottom:4}}>Name to print on back *</p>
                   <p style={{fontSize:10,color:C.muted,margin:"0 0 8px"}}>Pre-filled from your name — edit if you'd like something different</p>
                   <input
-                    value={shirtName || (shirtName===""&&name?name.split(" ")[0]:shirtName)}
+                    value={shirtName}
                     onFocus={()=>{ if(!shirtName && name) setShirtName(name.split(" ")[0]); }}
                     onChange={e=>{setShirtName(e.target.value);setErrors(ex=>({...ex,shirtName:null}));}}
                     placeholder={name?name.split(" ")[0]:"e.g. Alex"}
