@@ -140,11 +140,14 @@ export default function BBT5() {
     if (!joining) e.joining = "Please select";
     if (joining === "yes" && !untilTime) e.untilTime = "Please select a time";
     if (joining === "yes" && tshirt && !size) e.size = "Please pick a size";
-    if (joining === "yes" && tshirt && !shirtColor) { const cut=shirtCut||(gender==="female"?"ladies":"mens"); setShirtColor(cut==="mens"?"mens-navy":"ladies-navy"); }
     if (joining === "yes" && tshirt && !shirtName.trim() && !name.trim()) e.shirtName = "Please enter a name for the back";
     if (!agreed) e.agreed = "Please read and accept the tournament regulations";
     return e;
   };
+
+  // Derive effective shirt values (use defaults if user didn't explicitly pick)
+  const effectiveShirtColor = shirtColor || (gender==="female" ? "ladies-navy" : "mens-navy");
+  const effectiveShirtName  = shirtName.trim() || name.split(" ")[0];
 
   const handleSubmit = async () => {
     const e = validate();
@@ -156,8 +159,8 @@ export default function BBT5() {
       name: name.trim(), email: email.trim().toLowerCase(), gender, joining,
       tshirt: joining==="yes"?tshirt:false,
       size: joining==="yes"&&tshirt?size:"",
-      shirt_color: joining==="yes"&&tshirt?shirtColor:"",
-      shirt_name: joining==="yes"&&tshirt?(shirtName.trim()||name.split(" ")[0]):"",
+      shirt_color: joining==="yes"&&tshirt?effectiveShirtColor:"",
+      shirt_name: joining==="yes"&&tshirt?effectiveShirtName:"",
       total, until_time: joining==="yes"?untilTime:"",
       paid: joining==="yes"?paid:"na",
       comments: comments.trim(), registered_at: registeredAt,
@@ -207,6 +210,14 @@ export default function BBT5() {
   const removeInvite = async (id) => {
     await supabase.from('invites').delete().eq('id', id);
     setInvites(prev => prev.filter(i => i.id !== id));
+  };
+
+  const removeReg = async (id) => {
+    if (!window.confirm("Delete this registration? This cannot be undone.")) return;
+    await supabase.from('registrations').delete().eq('id', id);
+    await supabase.from('invites').delete().eq('reg_id', id);
+    setRegs(prev => prev.filter(r=>r.id!==id));
+    setInvites(prev => prev.filter(i=>i.regId!==id));
   };
 
   const exportCSV = () => {
@@ -365,8 +376,8 @@ export default function BBT5() {
             {filtered.length===0?<div style={{...card(),padding:"2.5rem",textAlign:"center",color:C.muted,fontSize:14}}>No entries.</div>:(
               <div style={{border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,tableLayout:"fixed",minWidth:560}}>
-                  <colgroup><col style={{width:"16%"}}/><col style={{width:"18%"}}/><col style={{width:"7%"}}/><col style={{width:"9%"}}/><col style={{width:"11%"}}/><col style={{width:"11%"}}/><col style={{width:"9%"}}/><col style={{width:"19%"}}/></colgroup>
-                  <thead><tr style={{background:"rgba(12,26,16,0.95)",borderBottom:`1px solid ${C.border}`}}>{["Name","Email","Gender","Joining","Until","T-shirt","Total","Payment"].map(h=>(<th key={h} style={{padding:"9px 11px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:C.muted}}>{h}</th>))}</tr></thead>
+                  <colgroup><col style={{width:"15%"}}/><col style={{width:"17%"}}/><col style={{width:"7%"}}/><col style={{width:"8%"}}/><col style={{width:"10%"}}/><col style={{width:"10%"}}/><col style={{width:"8%"}}/><col style={{width:"17%"}}/><col style={{width:"8%"}}/></colgroup>
+                  <thead><tr style={{background:"rgba(12,26,16,0.95)",borderBottom:`1px solid ${C.border}`}}>{["Name","Email","Gender","Joining","Until","T-shirt","Total","Payment",""].map(h=>(<th key={h} style={{padding:"9px 11px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:C.muted}}>{h}</th>))}</tr></thead>
                   <tbody>{filtered.map((r,i)=>(<tr key={r.id} style={{borderBottom:`1px solid ${C.border}`,background:i%2!==0?"rgba(12,26,16,0.82)":"rgba(6,16,10,0.82)"}}>
                     <td style={{padding:"9px 11px",fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</td>
                     <td style={{padding:"9px 11px",color:C.muted,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.email}</td>
@@ -376,6 +387,7 @@ export default function BBT5() {
                     <td style={{padding:"9px 11px",color:C.muted}}>{r.tshirt?`Yes·${r.size}`:"—"}</td>
                     <td style={{padding:"9px 11px",fontWeight:700,color:C.text}}>{r.total>0?`$${r.total}`:"—"}</td>
                     <td style={{padding:"9px 11px"}}><span style={{fontSize:11,fontWeight:600,color:r.paid==="paid"?C.accent:r.paid==="na"?C.muted:C.warning}}>{r.paid==="paid"?"✓ Paid":r.paid==="na"?"—":"Pending"}</span></td>
+                    <td style={{padding:"6px 11px",textAlign:"center"}}><button onClick={()=>removeReg(r.id)} style={{background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:7,color:"#f87171",cursor:"pointer",fontSize:11,padding:"3px 8px",fontFamily:fn}}>✕</button></td>
                   </tr>))}</tbody>
                 </table>
               </div>
@@ -504,7 +516,7 @@ export default function BBT5() {
                         {statusLabel[inv.status]}
                       </div>
                       {/* Remove button — admin only, only for pending invites */}
-                      {pinUnlocked&&inv.status==="invited"&&(
+                      {pinUnlocked&&(
                         <button onClick={()=>removeInvite(inv.id)} style={{background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:7,color:"#f87171",cursor:"pointer",fontSize:11,padding:"3px 8px",fontFamily:fn}}>✕</button>
                       )}
                     </div>
@@ -601,7 +613,7 @@ export default function BBT5() {
                         <div style={{fontWeight:600,fontSize:13,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{inv.name}</div>
                         <div style={{fontSize:11,color:col,marginTop:1}}>{lbl}</div>
                       </div>
-                      {inv.status==="invited"&&(
+                      {(
                         <button onClick={()=>removeInvite(inv.id)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid rgba(248,113,113,0.3)`,background:"rgba(248,113,113,0.08)",color:"#f87171",cursor:"pointer",fontSize:11,fontFamily:fn,flexShrink:0}}>Remove</button>
                       )}
                     </div>
