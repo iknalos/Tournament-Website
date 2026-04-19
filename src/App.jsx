@@ -129,6 +129,7 @@ export default function BBT5() {
     return inviteList.findIndex(inv => smartMatch(submittedName, inv.name));
   };
   const locked  = joining !== "yes";
+  const tshirtClosed = true; // T-shirt deadline passed — set false to reopen
   const total   = joining === "yes" ? (tshirt ? 30 : 25) : 0;
   const opacities = getOpacities(scrollPct);
 
@@ -210,6 +211,11 @@ export default function BBT5() {
   const removeInvite = async (id) => {
     await supabase.from('invites').delete().eq('id', id);
     setInvites(prev => prev.filter(i => i.id !== id));
+  };
+
+  const updateInviteStatus = async (id, status) => {
+    await supabase.from('invites').update({ status }).eq('id', id);
+    setInvites(prev => prev.map(i=>i.id===id?{...i,status}:i));
   };
 
   const removeReg = async (id) => {
@@ -613,9 +619,12 @@ export default function BBT5() {
                         <div style={{fontWeight:600,fontSize:13,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{inv.name}</div>
                         <div style={{fontSize:11,color:col,marginTop:1}}>{lbl}</div>
                       </div>
-                      {(
-                        <button onClick={()=>removeInvite(inv.id)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid rgba(248,113,113,0.3)`,background:"rgba(248,113,113,0.08)",color:"#f87171",cursor:"pointer",fontSize:11,fontFamily:fn,flexShrink:0}}>Remove</button>
-                      )}
+                      <div style={{display:"flex",gap:6,flexShrink:0}}>
+                        {inv.status==="invited"&&(
+                          <button onClick={()=>updateInviteStatus(inv.id,"cantmake")} style={{padding:"4px 10px",borderRadius:7,border:`1px solid rgba(251,191,36,0.3)`,background:"rgba(251,191,36,0.08)",color:"#fbbf24",cursor:"pointer",fontSize:11,fontFamily:fn}}>✗ Can't make it</button>
+                        )}
+                        <button onClick={()=>removeInvite(inv.id)} style={{padding:"4px 10px",borderRadius:7,border:`1px solid rgba(248,113,113,0.3)`,background:"rgba(248,113,113,0.08)",color:"#f87171",cursor:"pointer",fontSize:11,fontFamily:fn}}>Remove</button>
+                      </div>
                     </div>
                   );
                 })}
@@ -950,7 +959,12 @@ export default function BBT5() {
               <div style={{width:26,height:26,borderRadius:"50%",background:C.accent,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:11,fontWeight:800,color:"#000"}}>4</span></div>
               <span style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:C.muted}}>Tournament T-Shirt</span>
             </div>
-            <div style={{...card(),overflow:"hidden",border:`1px solid ${tshirt&&!locked?C.accentBdr:C.border}`,opacity:locked?0.5:1,transition:"border-color .2s,opacity .2s"}}>
+            <div style={{...card(),overflow:"hidden",border:`1px solid ${tshirt&&!locked?C.accentBdr:C.border}`,opacity:locked?0.5:1,transition:"border-color .2s,opacity .2s",position:"relative"}}>
+              {tshirtClosed&&!locked&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)",borderRadius:"inherit",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,backdropFilter:"blur(2px)"}}>
+                <span style={{fontSize:20}}>🔒</span>
+                <span style={{fontSize:13,fontWeight:700,color:"#fff"}}>T-shirt orders closed</span>
+                <span style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>Order already placed — deadline was Apr 18</span>
+              </div>}
               <div style={{padding:"1rem 1.2rem",display:"flex",alignItems:"center",gap:12,background:tshirt&&!locked?"rgba(34,197,94,0.07)":"transparent",transition:"background .3s"}}>
                 <div style={{width:44,height:44,borderRadius:12,background:tshirt&&!locked?C.accent:"rgba(18,38,24,0.9)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,transition:"background .3s"}}>👕</div>
                 <div style={{flex:1}}>
